@@ -355,29 +355,44 @@ variações MoM + variantes) e "Evolução de preço" (seletor
 atrativo → produto → categoria, com gráfico de linha da série histórica;
 com 1 mês de dado mostra um cartão de valor único em vez de gráfico).
 
-**Identidade visual:** cor de marca `#ff6600` (laranja) substituindo a
-paleta anterior como destaque principal (linha do gráfico de evolução,
-aba ativa, badges de promoção, barras positivas de variação MoM). Fonte
-de destaque: **Space Grotesk** (Google Fonts), usada como substituto
-gratuito de "Ofelia Display" — decisão tomada com o usuário porque Ofelia
-Display é uma fonte paga (Adobe Fonts/Blackletra) sem CDN gratuito
-disponível; não deve ser reproduzida sem licença. Se o usuário obtiver os
-arquivos da fonte (ou um kit do Adobe Fonts) no futuro, trocar via
-`@font-face` ou embed do Typekit, mantendo a classe `.font-display` como
-ponto único de troca.
+**Identidade visual (atualizado em 2026-07-13):** cor de marca `#ff6600`
+(laranja) como destaque principal (linha do gráfico de evolução, aba
+ativa, badges de promoção, barras positivas de variação MoM, e agora
+também o fundo sólido do header, com texto em branco para contraste).
+Fonte: **Poppins** (Google Fonts) em todo o site — decisão final do
+usuário, substituindo a escolha provisória anterior (Space Grotesk).
+Ofelia Display continua fora de cogitação por ser fonte paga sem CDN
+gratuito; a classe `.font-display` permanece como ponto único de troca
+caso o usuário obtenha os arquivos da fonte no futuro.
 
-**Detecção de campanha promocional:** não existe campo dedicado de
-"promoção" no banco — é inferido em tempo real no próprio dashboard (não
-no schema/coleta) via regex sobre `produto_nome`/`categoria`
-(`/promo|campanha|copa\b|black\s?(friday|november)|rock in rio|carnaval|f[ée]rias|independ[êe]ncia|dia (das|dos|do) /i`).
-Validado contra o dado real de julho/2026: captura corretamente
-categorias como "Promocional Dia das Mães", "Promocional Copa",
-"PROMOÇÃO INFANTIL", "Campanha WhatsApp" etc., sem sinalizar tipos padrão
-(Adulto, Meia Entrada, Idoso, PCD, Estudante, ID Jovem, Infantil,
-Cortesia, Sócio*, Aniversariante). É heurística sobre texto livre — pode
-ter falso positivo/negativo pontual; revisar a regex se aparecerem
-concorrentes/campanhas com nomenclatura muito diferente. Por ser derivado
-só de campos já coletados, não exigiu nenhuma mudança de schema/coletor.
+**Detecção de campanha promocional (redesenhada em 2026-07-14):** dois
+sinais, em ordem de prioridade:
+1. **Sazonalidade** (sinal primário, dado estruturado): `variante_tipo === "temporada"`
+   — o próprio modelo de dados já indica que o produto varia de preço por
+   época do ano, não é heurística de texto.
+2. **Evento/feriado** (sinal secundário, por palavra-chave): regex
+   específica para feriados e eventos sazonais reais (férias escolares,
+   Dia das Mães/Pais, Carnaval, Independência, Black Friday/November,
+   Copa, Rock in Rio, Natal, aniversário) aplicada a `produto_nome`/
+   `categoria`; e regex genérica (`promo|campanha`) como último recurso.
+
+**Falso positivo corrigido:** o Parque Bondinho Pão de Açúcar (site
+próprio) usa a categoria composta **"Crianca/Promocional"** como nome
+padrão do desconto infantil — não é uma campanha pontual, é só a
+nomenclatura da faixa etária. A regex genérica de "promo/campanha"
+capturava isso incorretamente. Corrigido: a regex genérica só é aplicada
+a uma categoria se ela **não contiver "/"** (rótulos compostos de público
+como "X/Promocional" ficam de fora desse gatilho genérico; a regex
+específica de feriados/eventos continua se aplicando normalmente a
+qualquer categoria, composta ou não). Ver funções `ehSazonal`, `ehEvento`,
+`categoriaEhEventoGenerico` em `docs/index.html`.
+
+Validado contra o dado real de julho/2026: Bondinho aparece como "Sem
+campanha detectada" (correto), enquanto AquaRio/BioParque continuam
+sinalizando suas campanhas reais (Dia das Mães, Copa, sazonalidade
+Alta/Baixa etc.). É heurística sobre texto livre além do sinal
+estrutural de sazonalidade — pode haver falso positivo/negativo pontual
+com nomenclaturas muito diferentes de concorrentes futuros.
 
 **Verificação de renderização real:** o sandbox de execução não tinha
 Chromium headless funcional (faltavam libs de sistema e o download do
@@ -390,6 +405,62 @@ campanha" quanto "sem campanha detectada" com o dado real, e a tela de
 evolução expõe os 3 seletores esperados. Não foi tirado um screenshot
 pixel a pixel (limitação do ambiente) — se precisar de validação visual
 completa, abrir o arquivo publicado no GitHub Pages num navegador normal.
+
+## YupStar Rio: resolução parcial via coleta manual (2026-07-14)
+
+O bloqueio de Cloudflare Turnstile (ver seção acima) permanece sem
+solução automatizável, mas os preços em si sempre estiveram visíveis no
+HTML estático da página assim que acessada por um navegador real — só a
+automação (Playwright/curl) é bloqueada. A pedido do usuário, passou-se a
+coletar esses preços manualmente (via sessão do Claude in Chrome, lendo
+a página real) e inserir no banco, em vez de deixar o concorrente de fora
+do dashboard indefinidamente.
+
+**Processo institucionalizado em `scripts/coletar_yupstar_manual.py`:**
+1. Alguém com navegador real abre
+   `https://rio.yupstar.com.br/as-rodas/yup-star-rio/` e lê os preços
+   exibidos.
+2. Atualiza o dicionário `PRECOS_MANUAIS` no script com os valores e mês
+   de referência atuais.
+3. Roda `python3 scripts/coletar_yupstar_manual.py --mes AAAA-MM` — insere
+   os preços na coleta (`id_coleta`) já existente daquele mês (não cria
+   coleta nova; YupStar Rio é só mais um concorrente dentro da coleta
+   mensal que os outros 5 atrativos automatizados já fizeram). É
+   idempotente: rodar de novo no mesmo mês substitui os preços anteriores
+   do YupStar Rio sem duplicar linhas.
+4. Reexportar o dashboard: `python3 historico/exportar_para_dashboard.py`.
+
+Dados reais coletados em 2026-07 (produto "Yup Star Rio": Adulto R$59,90,
+Melhor Idade R$39,90, Infantil R$39,90; produto "Promoção de Julho":
+combo 2 ingressos + pipoca ou chopp R$79,90). O produto "Promoção de
+Julho" é corretamente sinalizado como campanha promocional pelo próprio
+mecanismo de detecção (nome contém "Promoção"); os preços regulares do
+produto "Yup Star Rio" não são.
+
+## Dashboard: tabela completa com ranking, cascata e variantes de embarque (2026-07-13)
+
+A aba "Tarifário completo" ganhou, a pedido do usuário:
+- **Ranking/ordenação clicável** nas colunas Atrativo (A-Z) e Preço
+  (valor), com indicador visual de seta (↑/↓) e estado de ordenação ativa.
+- **Cascata de filtros** (Atrativo → Ingresso → Categoria), no mesmo
+  padrão já usado na aba "Evolução de preço": selecionar um atrativo
+  restringe a lista de ingressos disponíveis, e selecionar um ingresso
+  restringe a lista de categorias — os selects dependentes resetam
+  automaticamente quando o pai muda.
+- **Variantes de embarque visíveis via cascata:** ao selecionar um
+  atrativo E um ingresso específico (não "todos"), a tabela passa a
+  mostrar todas as linhas (inclusive as com `variante_tipo` preenchido) e
+  uma coluna extra "Variante". Isso resolve a lacuna notada pelo usuário
+  de que os preços do Paineiras-Corcovado saindo de Largo do Machado e
+  Copacabana só apareciam antes na seção separada "Preços com variantes"
+  — agora também aparecem diretamente na tabela principal ao filtrar por
+  esse ingresso específico.
+
+A aba "Evolução de preço" teve seus 3 seletores (Atrativo/Ingresso/
+Categoria) restilizados para o mesmo padrão compacto da aba Tarifário
+Completo (selects pequenos, sem `<label>` separado, inline no topo do
+cartão do gráfico) — a pedido do usuário, por ter gostado mais desse
+estilo do que o cartão "Selecionar ingresso" anterior, que foi removido.
 
 ## Riscos operacionais a monitorar
 
