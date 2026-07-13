@@ -54,6 +54,7 @@ const CORES = {
     "Paineiras-Corcovado": "#1f5c4d",
     "AquaRio": "#1e4a68",
     "BioParque do Rio": "#5b4a8a",
+    "YupStar Rio": "#c2185b",
   },
 };
 
@@ -82,14 +83,30 @@ function formatarMoeda(v) {
 // Black Friday/November, Copa, Rock in Rio, Natal), com "promo"/"campanha"
 // genérico como último recurso (cobre casos como "Campanha WhatsApp" que não
 // têm um feriado associado, mas ainda são uma ação promocional real).
-const REGEX_EVENTO = /f[ée]rias|dia (das|dos|do) |carnaval|independ[êe]ncia|copa\b|black\s?(friday|november)|rock in rio|natal|anivers[áa]rio|promo|campanha/i;
+const REGEX_EVENTO_ESPECIFICO = /f[ée]rias|dia (das|dos|do) |carnaval|independ[êe]ncia|copa\b|black\s?(friday|november)|rock in rio|natal|anivers[áa]rio/i;
+const REGEX_EVENTO_GENERICO = /promo|campanha/i;
 
 function ehSazonal(p) {
   return p.variante_tipo === "temporada";
 }
 
+// "promo"/"campanha" genérico só conta como evento se a categoria NÃO for um
+// rótulo composto de público (contém "/"), porque alguns sites usam "/" só
+// para combinar faixas de desconto no próprio nome da categoria -- não é uma
+// campanha real. Caso real conhecido: o Parque Bondinho Pão de Açúcar (site
+// próprio) nomeia a categoria infantil padrão como "Crianca/Promocional" --
+// isso é só o nome do desconto padrão para crianças, não uma promoção
+// pontual (corrigido em 2026-07-14 após o usuário notar o falso positivo).
+function categoriaEhEventoGenerico(categoria) {
+  return !categoria.includes("/") && REGEX_EVENTO_GENERICO.test(categoria);
+}
+
 function ehEvento(p) {
-  return REGEX_EVENTO.test(p.produto_nome) || REGEX_EVENTO.test(p.categoria);
+  const texto = `${p.produto_nome} ${p.categoria}`;
+  if (REGEX_EVENTO_ESPECIFICO.test(texto)) return true;
+  if (REGEX_EVENTO_ESPECIFICO.test(p.produto_nome)) return true;
+  if (categoriaEhEventoGenerico(p.categoria)) return true;
+  return !p.produto_nome.includes("/") && REGEX_EVENTO_GENERICO.test(p.produto_nome);
 }
 
 function ehPromocional(p) {
@@ -97,7 +114,8 @@ function ehPromocional(p) {
 }
 
 function nomePromo(p) {
-  return REGEX_EVENTO.test(p.categoria) ? p.categoria : p.produto_nome;
+  const categoriaSinaliza = REGEX_EVENTO_ESPECIFICO.test(p.categoria) || categoriaEhEventoGenerico(p.categoria);
+  return categoriaSinaliza ? p.categoria : p.produto_nome;
 }
 
 // ---------------------------------------------------------------------------
@@ -540,45 +558,33 @@ function TelaEvolucao({ dados }) {
 
   return (
     <div className="space-y-6">
-      <Cartao titulo="Selecionar ingresso">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="block text-xs text-[#6b6a64] mb-1">Atrativo</label>
-            <select
-              value={atrativo}
-              onChange={e => setAtrativo(e.target.value)}
-              className="w-full text-sm border border-[#e8e6e0] rounded-md px-3 py-2 bg-white"
-            >
-              {atrativos.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-[#6b6a64] mb-1">Ingresso / produto</label>
-            <select
-              value={produto}
-              onChange={e => setProduto(e.target.value)}
-              className="w-full text-sm border border-[#e8e6e0] rounded-md px-3 py-2 bg-white"
-            >
-              {produtos.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-[#6b6a64] mb-1">Categoria</label>
-            <select
-              value={categoria}
-              onChange={e => setCategoria(e.target.value)}
-              className="w-full text-sm border border-[#e8e6e0] rounded-md px-3 py-2 bg-white"
-            >
-              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
-      </Cartao>
-
       <Cartao
         titulo={`Evolução de preço — ${atrativo || "—"}`}
         nota={produto && categoria ? `${produto} · ${categoria}` : undefined}
       >
+        <div className="flex flex-wrap items-center gap-3 mb-5">
+          <select
+            value={atrativo}
+            onChange={e => setAtrativo(e.target.value)}
+            className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white"
+          >
+            {atrativos.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <select
+            value={produto}
+            onChange={e => setProduto(e.target.value)}
+            className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white"
+          >
+            {produtos.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <select
+            value={categoria}
+            onChange={e => setCategoria(e.target.value)}
+            className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white"
+          >
+            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
         {serie.length === 0 ? (
           <p className="text-sm text-[#6b6a64] italic py-8 text-center">
             Selecione um atrativo, ingresso e categoria para ver a série histórica.
@@ -662,7 +668,7 @@ function App() {
         )}
         <footer className="text-xs text-[#6b6a64] text-center pt-6 pb-4 mt-6 border-t border-[#e8e6e0]">
           Dados gerados em {new Date(dados.gerado_em).toLocaleString('pt-BR')} ·
-          YupStar Rio não incluído (coleta manual, ver CONHECIMENTO.md)
+          YupStar Rio incluído via coleta manual (Cloudflare Turnstile impede automação, ver CONHECIMENTO.md)
         </footer>
       </main>
     </div>
