@@ -1,0 +1,509 @@
+{
+  "data_coleta": "2026-07-11T21:57:54.509549+00:00",
+  "sites": {
+    "Parque Bondinho Pão de Açúcar (próprio)": [
+      {
+        "codigo": "TKT-DC755053",
+        "nome": "Bilhete Bondinho",
+        "categorias": {
+          "Adulto": 205.0,
+          "Crianca/Promocional": 160.0,
+          "Idoso/Meia/Estudante": 102.0
+        }
+      },
+      {
+        "codigo": "TKT-QS410696",
+        "nome": "Bilhete Estado RJ",
+        "categorias": {
+          "Adulto": 89.0,
+          "Crianca/Promocional": 44.0,
+          "Idoso/Meia/Estudante": null
+        }
+      },
+      {
+        "codigo": "TKT-HL589735",
+        "nome": "Bilhete Acesso Rápido",
+        "categorias": {
+          "Adulto": 325.0,
+          "Crianca/Promocional": 162.5,
+          "Idoso/Meia/Estudante": null
+        }
+      },
+      {
+        "codigo": "TKT-VD141518",
+        "nome": "Bem-estar no Parque Bondinho",
+        "categorias": {
+          "Adulto": 250.0,
+          "Crianca/Promocional": null,
+          "Idoso/Meia/Estudante": null
+        }
+      },
+      {
+        "codigo": "PRD-KS640370",
+        "nome": "Amanhecer no Parque Bondinho",
+        "categorias": {
+          "Adulto": 550.0,
+          "Crianca/Promocional": null,
+          "Idoso/Meia/Estudante": null
+        }
+      },
+      {
+        "codigo": "PRD-NM190138",
+        "nome": "Visita Guiada",
+        "categorias": {
+          "Adulto": 270.0,
+          "Crianca/Promocional": 225.0,
+          "Idoso/Meia/Estudante": null
+        }
+      }
+    ],
+    "Trem do Corcovado": [
+      {
+        "nome": "Trem do Corcovado",
+        "categorias": {
+          "Ingresso ADULTO": 134.0,
+          "Ingresso IDOSO": 70.0,
+          "Ingresso INFANTIL": 107.0,
+          "Ingresso ESTUDANTE": 107.0,
+          "Ingresso ID JOVEM": 107.0,
+          "Ingresso PcD": 107.0
+        }
+      }
+    ],
+    "Paineiras-Corcovado": [
+      {
+        "sku": 3073,
+        "nome": "Ingresso Cristo Redentor",
+        "categorias": {
+          "Adulto": 87,
+          "Idoso": 60,
+          "ID Jovem": 60,
+          "PCD": 60,
+          "Estudante": 60
+        },
+        "locais_embarque": [
+          "Paineiras Corcovado",
+          "Largo do Machado",
+          "Copacabana"
+        ],
+        "precos_por_local_embarque": {
+          "Paineiras Corcovado": {
+            "Adulto": 87,
+            "Idoso": 60,
+            "ID Jovem": 60,
+            "PCD": 60,
+            "Estudante": 60
+          },
+          "Largo do Machado": {
+            "Adulto": 132,
+            "Idoso": 105,
+            "ID Jovem": 105,
+            "PCD": 105,
+            "Estudante": 105
+          },
+          "Copacabana": {
+            "Adulto": 132,
+            "Idoso": 105,
+            "ID Jovem": 105,
+            "PCD": 105,
+            "Estudante": 105
+          }
+        }
+      },
+      {
+        "sku": 4552,
+        "nome": "Combo Cristo Redentor + AquaRio",
+        "categorias": {
+          "Inteira": 201.4,
+          "Idoso": 135,
+          "ID Jovem": 135,
+          "PCD": 135,
+          "Estudante": 135
+        },
+        "locais_embarque": [
+          "Paineiras Corcovado"
+        ]
+      },
+      {
+        "sku": 8014,
+        "nome": "Combo Cristo Redentor + Bioparque do Rio",
+        "categorias": {
+          "Inteira": 136.5,
+          "Idoso": 85.8,
+          "ID Jovem": 85.8,
+          "PCD": 85.8,
+          "Estudante": 85.8
+        },
+        "locais_embarque": [
+          "Paineiras Corcovado"
+        ]
+      }
+    ],
+    "AquaRio": [
+      {
+        "sku": 10428,
+        "nome": "Campanha WhatsApp",
+        "categorias": {
+          "Inteira - Brasileira": 108,
+          "Meia Entrada": 72,
+          "Infantil": 63,
+          "Promocional Rio de Janeiro": 89,
+          "Inteira": 126
+        }
+      },
+      {
+        "sku": 7564,
+        "nome": "Combo AquaRio + Cristo Redentor",
+        "categorias": {
+          "Inteira": 198.4,
+          "Idoso": 133,
+          "ID Jovem": 133,
+          "PCD": 133,
+          "Estudante": 133
+        },
+        "locais_embarque": [
+          "Paineiras Corcovado"
+        ]
+      },
+      {
+        "sku": 7573,
+        "nome": "Combo AquaRio + BioParque do Rio",
+        "categorias": {
+          "Inteira": 167.4,
+          "Meia Entrada": 99.75,
+          "Infantil": 91.15
+        }
+      },
+      {
+        "sku": 7643,
+        "nome": "Ingresso AquaRio",
+        "categorias": {
+          "Promocional Dia das Mulheres": 80,
+          "Promocional - Inteira": 99,
+          "Promocional Dia das Mães": 80,
+          "Inteira": 160,
+          "Meia Entrada": 80,
+          "Infantil": 70,
+          "Criança isento": 0,
+          "Cortesia": 0,
+          "Promocional Rio de Janeiro": 99,
+          "Promocional Brasileiro": 99,
+          "Promocional Dia das Crianças": 49.9,
+          "Promocional Aniversário AquaRio": 0,
+          "Promocional Black November": 99,
+          "PCD": 0,
+          "Inteira - Brasileira": 150,
+          "Promocional Carioca Infantil": 45,
+          "Promoção O Amor Está no Mar": 80,
+          "Promocional  Dia do Professor": 0,
+          "Professor - Acompanhante": 80,
+          "Promocional Copa": 80
+        }
+      },
+      {
+        "sku": 7646,
+        "nome": "Ingresso Museu de Cera",
+        "categorias": {
+          "Inteira": 66,
+          "Meia Entrada": 33,
+          "Promocional Copa": 33
+        }
+      },
+      {
+        "sku": 7647,
+        "nome": "Ingresso Mar de Espelhos",
+        "categorias": {
+          "Inteira": 66,
+          "Meia Entrada": 33,
+          "Promocional Copa": 33
+        }
+      },
+      {
+        "sku": 7649,
+        "nome": "Combo AquaRio + Mar de Espelhos + Museu de Cera",
+        "categorias": {
+          "Inteira": 208,
+          "Meia Entrada": 141,
+          "Promocional": 0,
+          "Infantil": 136,
+          "Criança isento": 0,
+          "Promocional - Experiência Completa": 175
+        }
+      },
+      {
+        "sku": 9944,
+        "nome": "Experiência completa + GEX - E-Commerce - Promoção Dia dos Pais",
+        "categorias": {
+          "Inteira": 265,
+          "Meia Entrada": 174,
+          "Infantil": 169,
+          "Promocional Rio de Janeiro": 199,
+          "Promocional Dia dos Pais": 174
+        }
+      },
+      {
+        "sku": 7661,
+        "nome": "AquaRio - Sessão Azul",
+        "categorias": {
+          "Meia entrada acompanhante Sessão Azul": 80
+        }
+      },
+      {
+        "sku": 9288,
+        "nome": "Controle de Acesso - AquaRio",
+        "categorias": {
+          "Visita Institucional": 0,
+          "Visita Técnica": 0
+        }
+      },
+      {
+        "sku": 9740,
+        "nome": "GEX (Globo Experience)",
+        "categorias": {
+          "Inteira": 0,
+          "Meia Entrada": 0,
+          "Infantil": 0,
+          "Promocional Copa": 33
+        }
+      },
+      {
+        "sku": 9813,
+        "nome": "Combo AquaRio + GEX (Globo Experience)",
+        "categorias": {
+          "Inteira": 185,
+          "Meia Entrada": 108,
+          "Infantil": 103,
+          "Promocional Rio de Janeiro": 144,
+          "Promocional Copa": 108
+        }
+      },
+      {
+        "sku": 9814,
+        "nome": "Combo Aquário + Mar de Espelhos + GEX",
+        "categorias": {
+          "Inteira": 230,
+          "Meia Entrada": 141,
+          "Infantil": 136,
+          "Promocional Rio de Janeiro": 175
+        }
+      },
+      {
+        "sku": 9822,
+        "nome": "Combo Aquário + Museu de Cera + GEX",
+        "categorias": {
+          "Inteira": 230,
+          "Meia Entrada": 141,
+          "Infantil": 136,
+          "Promocional Rio de Janeiro": 175
+        }
+      },
+      {
+        "sku": 9824,
+        "nome": "Experiência Completa + GEX (Globo Experience)",
+        "categorias": {
+          "Inteira": 265,
+          "Meia Entrada": 174,
+          "Infantil": 169,
+          "Promocional Rio de Janeiro": 199,
+          "Promocional Copa": 174
+        }
+      },
+      {
+        "sku": 7648,
+        "nome": "Passaporte Anual",
+        "categorias": {
+          "Adulto": 190,
+          "Especial": 0
+        }
+      }
+    ],
+    "BioParque do Rio": [
+      {
+        "sku": 8039,
+        "nome": "Combo Bioparque do Rio + Cristo Redentor",
+        "categorias": {
+          "Inteira": 135.6,
+          "Idoso": 83.8,
+          "ID Jovem": 83.8,
+          "PCD": 83.8,
+          "Estudante": 83.8,
+          "Infantil": 90
+        },
+        "locais_embarque": [
+          "Paineiras Corcovado"
+        ],
+        "precos_por_temporada": {
+          "D0 (hoje, 2026-07-11)": {
+            "Inteira": 69,
+            "Idoso": 34.5,
+            "ID Jovem": 34.5,
+            "PCD": 34.5,
+            "Estudante": 34.5
+          },
+          "BioParque - ALTA (ex: 2026-07-12)": {
+            "Inteira": 69,
+            "Idoso": 34.5,
+            "ID Jovem": 34.5,
+            "PCD": 34.5,
+            "Estudante": 34.5
+          },
+          "BioParque - BAIXA (ex: 2026-08-05)": {
+            "Inteira": 61,
+            "Idoso": 30.5,
+            "ID Jovem": 30.5,
+            "PCD": 30.5,
+            "Estudante": 30.5
+          }
+        }
+      },
+      {
+        "sku": 7684,
+        "nome": "Combo BioParque do Rio + AquaRio",
+        "categorias": {
+          "Inteira": 167.4,
+          "PROMOÇÃO INFANTIL": 0,
+          "Meia Entrada": 99.75,
+          "Infantil": 91.15
+        },
+        "precos_por_temporada": {
+          "D0 (hoje, 2026-07-11)": {
+            "Inteira": 69,
+            "Meia Entrada": 34.5,
+            "Infantil": 34.5
+          },
+          "Bioparque do Rio - ALTA (ex: 2026-07-12)": {
+            "Inteira": 69,
+            "Meia Entrada": 34.5,
+            "Infantil": 34.5
+          },
+          "Bioparque do Rio - BAIXA (ex: 2026-08-05)": {
+            "Inteira": 61,
+            "Meia Entrada": 30.5,
+            "Infantil": 30.5
+          }
+        }
+      },
+      {
+        "sku": 8413,
+        "nome": "Ingresso BioParque do Rio",
+        "categorias": {
+          "ANIVERSARIANTE": 0,
+          "Adulto": 39.9,
+          "Infantil": 25.8,
+          "Idoso": 25.8,
+          "Estudante/ID Jovem": 0,
+          "Pessoa com deficiência": 25.8,
+          "PROMOÇÃO INFANTIL": 10,
+          "Meia Entrada": 25.8,
+          "Acompanhante PCD": 0,
+          "Cortesia": 0,
+          "Inteira  RCV": 0,
+          "Meia-entrada - RCV": 0,
+          "Promocional Dia das Mães": 0,
+          "Promocional Rock In Rio": 39.9,
+          "Evento Avistar": 39.9,
+          "Promocional Dia das Crianças": 10,
+          "Promocional Diversão em dobro": 0,
+          "Promocional Infantil": 0,
+          "Promoção Independência": 32.5,
+          "Promoção Acompanhante Independência": 32.5,
+          "Promocional  Dia do Professor": 32.5,
+          "Professor - Acompanhante": 32.5,
+          "Promocional Copa": 32.5,
+          "Acompanhante Copa": 32.5
+        },
+        "precos_por_temporada": {
+          "D0 (hoje, 2026-07-11)": {
+            "Adulto": 69,
+            "Infantil": 34.5,
+            "Idoso": 34.5,
+            "Pessoa com deficiência": 34.5,
+            "Meia Entrada": 34.5
+          },
+          "Alta - Antecipada (ex: 2026-07-12)": {
+            "Adulto": 62,
+            "Infantil": 34.5,
+            "Idoso": 34.5,
+            "Pessoa com deficiência": 34.5,
+            "Meia Entrada": 34.5
+          },
+          "Baixa - Antecipada (ex: 2026-08-05)": {
+            "Adulto": 55,
+            "Infantil": 30.5,
+            "Idoso": 30.5,
+            "Pessoa com deficiência": 30.5,
+            "Meia Entrada": 30.5
+          }
+        }
+      },
+      {
+        "sku": 9125,
+        "nome": "Ingresso BioParque - Aniversariante",
+        "categorias": {
+          "Adulto": 39.9,
+          "ANIVERSARIANTE": 0
+        }
+      },
+      {
+        "sku": 10230,
+        "nome": "Promocional Dia dos Professores",
+        "categorias": {
+          "Adulto": 65,
+          "Infantil": 32.5,
+          "Idoso": 32.5,
+          "Pessoa com deficiência": 32.5,
+          "Meia Entrada": 32.5,
+          "Promocional  Dia do Professor": 29,
+          "Professor - Acompanhante": 29
+        }
+      },
+      {
+        "sku": 11362,
+        "nome": "Passaporte BioParque - Promoção",
+        "categorias": {
+          "Adulto": 99.9,
+          "Especial": 49.9,
+          "Sócio Embaixador": 0,
+          "Sócio Isento": 0
+        }
+      },
+      {
+        "sku": 11967,
+        "nome": "Ingresso BioParque do Rio - Caravana do Silvinho",
+        "categorias": {
+          "Caravana do Silvinho": 0
+        }
+      },
+      {
+        "sku": 8415,
+        "nome": "Passaporte Anual",
+        "categorias": {
+          "Adulto": 99.9,
+          "Especial": 49.9,
+          "Sócio Meia Entrada": 50,
+          "Sócio Embaixador": 0,
+          "Sócio Isento": 0
+        }
+      },
+      {
+        "sku": 9557,
+        "nome": "Passaporte Anual - Sescoop",
+        "categorias": {
+          "Adulto": 99.9,
+          "Especial": 49.9,
+          "Sócio Meia Entrada": 50,
+          "Sócio Embaixador": 0,
+          "Sócio Isento": 0
+        }
+      },
+      {
+        "sku": 10011,
+        "nome": "BioParque - Sessão Azul",
+        "categorias": {
+          "Acompanhante": 32.5
+        }
+      }
+    ]
+  },
+  "erros": {}
+}
