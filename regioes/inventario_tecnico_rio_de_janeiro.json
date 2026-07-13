@@ -1,0 +1,93 @@
+{
+  "regiao": "Rio de Janeiro",
+  "atrativos": [
+    {
+      "nome": "Parque Bondinho Pão de Açúcar",
+      "e_proprio": true,
+      "mechanism": "api_json_aberta",
+      "config": {
+        "endpoint": "https://backend.bondinho.com.br/api/Products/GetProductsRangeFromCategories",
+        "metodo": "POST",
+        "payload": {
+          "categoryCode": [
+            "CAT-SITEUN91434"
+          ],
+          "channel": 2,
+          "lang": "BR"
+        },
+        "mapa_campos": {
+          "nome_produto": "productName",
+          "codigo_estavel": "productCode",
+          "preco_adulto": "minPriceAdult",
+          "preco_crianca": "minPriceChild",
+          "preco_idoso": "minPriceElders"
+        }
+      }
+    },
+    {
+      "nome": "Trem do Corcovado",
+      "e_proprio": false,
+      "mechanism": "html_form_post",
+      "config": {
+        "endpoint": "https://www.tremdocorcovado.rio/Home/getTicket",
+        "metodo": "POST",
+        "headers_extra": {
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        "referer": "https://www.tremdocorcovado.rio/",
+        "seletor_linha": "div.row",
+        "seletor_nome": "h5",
+        "seletor_preco": "span.amount"
+      }
+    },
+    {
+      "nome": "Paineiras-Corcovado",
+      "e_proprio": false,
+      "mechanism": "limber_software",
+      "config": {
+        "hostname": "ingressos.paineirascorcovado.com.br",
+        "skus_relevantes": [
+          3073,
+          4552,
+          8014
+        ],
+        "particularidades": [
+          "preco_por_local_embarque"
+        ]
+      }
+    },
+    {
+      "nome": "AquaRio",
+      "e_proprio": false,
+      "mechanism": "limber_software",
+      "config": {
+        "hostname": "ingressos.aquariomarinhodorio.com.br",
+        "skus_relevantes": null,
+        "particularidades": []
+      }
+    },
+    {
+      "nome": "BioParque do Rio",
+      "e_proprio": false,
+      "mechanism": "limber_software",
+      "config": {
+        "hostname": "ingressos.bioparquedorio.com.br",
+        "skus_relevantes": null,
+        "particularidades": [
+          "preco_por_temporada",
+          "preco_d0_vs_antecipado"
+        ]
+      }
+    },
+    {
+      "nome": "YupStar Rio",
+      "e_proprio": false,
+      "mechanism": "protegido_cloudflare_turnstile",
+      "config": {
+        "url": "https://rio.yupstar.com.br/as-rodas/yup-star-rio/",
+        "grupo_controlador": "Gramado Parks",
+        "nota": "Precos estao no HTML estatico da pagina, mas o Cloudflare Turnstile bloqueia scraping headless simples. Coleta manual por enquanto -- ver CONHECIMENTO.md secao 'Casos nao resolvidos'."
+      }
+    }
+  ]
+}
