@@ -1,0 +1,81 @@
+name: Coleta mensal de tarifário
+
+# Dois gatilhos:
+# 1. schedule: roda automaticamente todo dia 1 do mês, às 09:00 UTC (06:00 BRT).
+#    Cron do GitHub Actions é sempre em UTC.
+# 2. workflow_dispatch: permite rodar manualmente pela aba "Actions" do repo,
+#    com opção de forçar uma 2a coleta no mês (útil se a coleta agendada
+#    falhou parcialmente e você quer tentar de novo).
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+    inputs:
+      forcar:
+        description: "Forçar nova coleta mesmo se já existir uma este mês"
+        required: false
+        type: boolean
+        default: false
+      mes_referencia:
+        description: "Mês de referência manual (formato YYYY-MM). Deixe vazio para usar o mês atual."
+        required: false
+        type: string
+
+permissions:
+  contents: write  # necessário para o job commitar o banco atualizado de volta no repo
+
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # coleta deveria durar segundos; timeout curto evita jobs travados consumindo minutos gratuitos
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Rodar coleta e registrar no histórico
+        id: coleta
+        working-directory: historico
+        run: |
+          ARGS=""
+          if [ "${{ inputs.forcar }}" = "true" ]; then
+            ARGS="$ARGS --forcar"
+          fi
+          if [ -n "${{ inputs.mes_referencia }}" ]; then
+            ARGS="$ARGS --mes ${{ inputs.mes_referencia }}"
+          fi
+          python3 coletar_e_registrar.py $ARGS
+
+      - name: Exportar dados para o dashboard
+        if: steps.coleta.outputs.coleta_realizada == 'true'
+        working-directory: historico
+        run: python3 exportar_para_dashboard.py
+
+      - name: Commitar banco atualizado, snapshots e dados do dashboard
+        if: steps.coleta.outputs.coleta_realizada == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add historico/tarifario.db historico/snapshots_brutos/ docs/dados_tarifario.json
+          if git diff --cached --quiet; then
+            echo "Nada para commitar."
+            exit 0
+          fi
+          git commit -m "Coleta automática de tarifário — $(date -u +'%Y-%m-%d')"
+          # git pull --rebase antes do push cobre o caso raro de dois disparos
+          # concorrentes (ex: schedule + manual ao mesmo tempo) tentando
+          # commitar em paralelo -- sem isso, o segundo push falharia com
+          # "non-fast-forward" e o job terminaria em erro sem necessidade.
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push
+
+      - name: Resumo (nada a commitar)
+        if: steps.coleta.outputs.coleta_realizada == 'false'
+        run: echo "Já existia uma coleta para este mês de referência — nada foi alterado. Use 'forcar' se quiser recoletar."
