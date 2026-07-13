@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor de Tarifário — Rio de Janeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<script src="https://unpkg.com/recharts@2/umd/Recharts.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+  .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+  .font-mono-data { font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace; }
+</style>
+</head>
+<body class="bg-[#faf9f7] text-[#1c1b19]">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+const {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, BarChart, Bar, Cell
+} = Recharts;
+
+// ---------------------------------------------------------------------------
+// Identidade visual: laranja #ff6600 como cor de marca/destaque. Fonte de
+// destaque: Space Grotesk (substituto gratuito via Google Fonts para Ofelia
+// Display, que é uma fonte paga da Adobe Fonts/Blackletra sem CDN gratuito
+// disponível -- decisão registrada em sessão com o usuário em 2026-07-11).
+// ---------------------------------------------------------------------------
+const LARANJA = "#ff6600";
+const CORES = {
+  fundo: "#faf9f7",
+  texto: "#1c1b19",
+  textoSuave: "#6b6a64",
+  linha: "#e8e6e0",
+  laranja: LARANJA,
+  laranjaEscuro: "#cc5200",
+  laranjaClaro: "#ffe3cc",
+  verde: "#1f5c4d",
+  azul: "#1e4a68",
+  roxo: "#5b4a8a",
+  amarelo: "#c99a2e",
+  concorrentes: {
+    "Parque Bondinho Pão de Açúcar (próprio)": LARANJA,
+    "Trem do Corcovado": "#8a7a4a",
+    "Paineiras-Corcovado": "#1f5c4d",
+    "AquaRio": "#1e4a68",
+    "BioParque do Rio": "#5b4a8a",
+  },
+};
+
+function corConcorrente(nome) {
+  return CORES.concorrentes[nome] || "#999";
+}
+
+function formatarMoeda(v) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// ---------------------------------------------------------------------------
+// Detecção de campanha promocional
+// ---------------------------------------------------------------------------
+// Não existe (ainda) um campo dedicado de "campanha" no banco -- a coleta
+// registra só concorrente/produto/categoria/valor. Combinado com o usuário:
+// tratar como "promocional" qualquer produto ou categoria cujo nome sinalize
+// uma campanha (nome de data comemorativa, evento, ou a palavra
+// promo/campanha em si), em vez de um tipo de ingresso padrão (Adulto,
+// Meia Entrada, Idoso, PCD, Estudante, ID Jovem, Infantil, Cortesia, etc.).
+// É uma heurística sobre texto livre: pode ter falso positivo/negativo
+// ocasional, revisar periodicamente com dado real.
+const REGEX_PROMO = /promo|campanha|copa\b|black\s?(friday|november)|rock in rio|carnaval|f[ée]rias|independ[êe]ncia|dia (das|dos|do) /i;
+
+function ehPromocional(p) {
+  return REGEX_PROMO.test(p.produto_nome) || REGEX_PROMO.test(p.categoria);
+}
+
+function nomePromo(p) {
+  // extrai um rótulo curto pra exibir (prioriza a categoria, que costuma
+  // ser mais específica que o nome do produto/combo)
+  return REGEX_PROMO.test(p.categoria) ? p.categoria : p.produto_nome;
+}
+
+// ---------------------------------------------------------------------------
+// Layout geral
+// ---------------------------------------------------------------------------
+function Cabecalho({ dados, tela, setTela }) {
+  const ultimaColeta = dados?.coletas?.[dados.coletas.length - 1];
+  return (
+    <header className="border-b border-[#e8e6e0] bg-white">
+      <div className="max-w-6xl mx-auto px-6 md:px-12 pt-8 pb-4">
+        <p className="text-xs tracking-[0.15em] uppercase text-[#6b6a64] mb-2">
+          Grupo Iter · Inteligência de Mercado
+        </p>
+        <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight">
+          Monitor de Tarifário <span style={{ color: LARANJA }}>—</span> Rio de Janeiro
+        </h1>
+        <p className="text-sm text-[#6b6a64] mt-3 max-w-2xl">
+          Acompanhamento mensal de preços de ingressos entre o Parque Bondinho Pão de
+          Açúcar e os principais concorrentes na cidade.
+          {ultimaColeta && (
+            <> Última coleta: <span className="font-mono-data">{ultimaColeta.mes_referencia}</span>.</>
+          )}
+        </p>
+      </div>
+      <nav className="max-w-6xl mx-auto px-6 md:px-12 flex gap-1">
+        {[
+          { id: "geral", label: "Visão geral" },
+          { id: "evolucao", label: "Evolução de preço" },
+        ].map(aba => (
+          <button
+            key={aba.id}
+            onClick={() => setTela(aba.id)}
+            className={`font-display text-sm font-medium px-4 py-3 border-b-2 transition-colors ${
+              tela === aba.id
+                ? "border-[#ff6600] text-[#1c1b19]"
+                : "border-transparent text-[#6b6a64] hover:text-[#1c1b19]"
+            }`}
+          >
+            {aba.label}
+          </button>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
+function Cartao({ titulo, children, nota, className }) {
+  return (
+    <div className={`bg-white border border-[#e8e6e0] rounded-lg p-5 md:p-6 ${className || ""}`}>
+      {titulo && (
+        <div className="flex items-baseline justify-between mb-4">
+          <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-[#6b6a64]">{titulo}</h3>
+          {nota && <span className="text-xs text-[#6b6a64]">{nota}</span>}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tela 1: Visão geral
+// ---------------------------------------------------------------------------
+function TiraCampanhas({ precos, mesReferencia, atrativos }) {
+  const porAtrativo = useMemo(() => {
+    return atrativos.map(nome => {
+      const promos = precos.filter(
+        p => p.concorrente === nome && p.mes_referencia === mesReferencia && ehPromocional(p)
+      );
+      const nomesUnicos = [...new Set(promos.map(nomePromo))];
+      return { nome, emCampanha: nomesUnicos.length > 0, promos: nomesUnicos };
+    });
+  }, [precos, mesReferencia, atrativos]);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      {porAtrativo.map(a => (
+        <div
+          key={a.nome}
+          className={`rounded-lg border p-3 ${a.emCampanha ? "border-[#ff6600] bg-[#fff5eb]" : "border-[#e8e6e0] bg-white"}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: corConcorrente(a.nome) }}></span>
+            <span className="text-xs font-medium truncate">{a.nome}</span>
+          </div>
+          {a.emCampanha ? (
+            <p className="text-xs" style={{ color: CORES.laranjaEscuro }}>
+              🏷️ Em campanha: {a.promos.slice(0, 2).join(", ")}
+              {a.promos.length > 2 && ` +${a.promos.length - 2}`}
+            </p>
+          ) : (
+            <p className="text-xs text-[#6b6a64]">Sem campanha detectada</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TabelaCompleta({ precos, mesReferencia }) {
+  const [incluirPromo, setIncluirPromo] = useState(false);
+  const [filtroAtrativo, setFiltroAtrativo] = useState("todos");
+
+  const atrativos = useMemo(
+    () => [...new Set(precos.map(p => p.concorrente))].sort(),
+    [precos]
+  );
+
+  const linhas = useMemo(() => {
+    return precos
+      .filter(p => p.mes_referencia === mesReferencia && p.variante_tipo === null)
+      .filter(p => incluirPromo || !ehPromocional(p))
+      .filter(p => filtroAtrativo === "todos" || p.concorrente === filtroAtrativo)
+      .sort((a, b) => a.concorrente.localeCompare(b.concorrente) || a.produto_nome.localeCompare(b.produto_nome) || a.categoria.localeCompare(b.categoria));
+  }, [precos, mesReferencia, incluirPromo, filtroAtrativo]);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <select
+          value={filtroAtrativo}
+          onChange={e => setFiltroAtrativo(e.target.value)}
+          className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white"
+        >
+          <option value="todos">Todos os atrativos</option>
+          {atrativos.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <label className="flex items-center gap-1.5 text-xs text-[#6b6a64] cursor-pointer select-none">
+          <input type="checkbox" checked={incluirPromo} onChange={e => setIncluirPromo(e.target.checked)} />
+          Incluir categorias promocionais/de campanha
+        </label>
+        <span className="text-xs text-[#6b6a64] ml-auto">{linhas.length} ingresso(s)</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#e8e6e0] text-left text-xs uppercase tracking-wide text-[#6b6a64]">
+              <th className="py-2 pr-4">Atrativo</th>
+              <th className="py-2 pr-4">Ingresso</th>
+              <th className="py-2 pr-4">Categoria</th>
+              <th className="py-2 text-right">Preço</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map((l, i) => {
+              const promo = ehPromocional(l);
+              return (
+                <tr key={i} className="border-b border-[#f2f1ec]">
+                  <td className="py-2 pr-4">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full mr-2"
+                      style={{ backgroundColor: corConcorrente(l.concorrente) }}
+                    ></span>
+                    {l.concorrente}
+                  </td>
+                  <td className="py-2 pr-4 text-[#6b6a64]">{l.produto_nome}</td>
+                  <td className="py-2 pr-4 text-[#6b6a64]">
+                    {l.categoria}
+                    {promo && (
+                      <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: CORES.laranjaClaro, color: CORES.laranjaEscuro }}>
+                        promo
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2 text-right font-mono-data">{formatarMoeda(l.valor)}</td>
+                </tr>
+              );
+            })}
+            {linhas.length === 0 && (
+              <tr><td colSpan="4" className="py-8 text-center text-[#6b6a64] text-sm italic">Nenhum ingresso encontrado com este filtro.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SecaoVariantes({ precos, mesReferencia }) {
+  const comVariante = useMemo(
+    () => precos.filter(p => p.mes_referencia === mesReferencia && p.variante_tipo !== null),
+    [precos, mesReferencia]
+  );
+
+  const porProduto = useMemo(() => {
+    const grupos = {};
+    for (const p of comVariante) {
+      const chave = `${p.concorrente}::${p.produto_nome}`;
+      if (!grupos[chave]) grupos[chave] = { concorrente: p.concorrente, produto: p.produto_nome, tipo: p.variante_tipo, itens: {} };
+      const chaveVariante = p.variante_nome;
+      if (!grupos[chave].itens[chaveVariante]) grupos[chave].itens[chaveVariante] = {};
+      grupos[chave].itens[chaveVariante][p.categoria] = p.valor;
+    }
+    return Object.values(grupos);
+  }, [comVariante]);
+
+  if (porProduto.length === 0) return null;
+
+  return (
+    <Cartao titulo="Preços com variantes (embarque / temporada / antecedência)" nota={mesReferencia}>
+      <div className="space-y-6">
+        {porProduto.map((grupo, i) => (
+          <div key={i}>
+            <p className="text-sm font-medium mb-2">
+              <span style={{ color: corConcorrente(grupo.concorrente) }}>{grupo.concorrente}</span>
+              {" — "}{grupo.produto}
+              <span className="text-xs text-[#6b6a64] ml-2">
+                ({grupo.tipo === "embarque" ? "por local de embarque" : "por temporada / antecedência"})
+              </span>
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Object.entries(grupo.itens).map(([variante, categorias]) => (
+                <div key={variante} className="border border-[#e8e6e0] rounded-md p-3 bg-[#fafaf8]">
+                  <p className="text-xs font-medium text-[#6b6a64] mb-2">{variante}</p>
+                  {Object.entries(categorias).map(([cat, val]) => (
+                    <div key={cat} className="flex justify-between text-sm">
+                      <span className="text-[#6b6a64]">{cat}</span>
+                      <span className="font-mono-data">{formatarMoeda(val)}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Cartao>
+  );
+}
+
+function GraficoVariacaoMoM({ precos, coletas }) {
+  const variacoes = useMemo(() => {
+    if (coletas.length < 2) return [];
+    const ultimaPorMes = {};
+    for (const c of coletas) {
+      if (!ultimaPorMes[c.mes_referencia] || c.id_coleta > ultimaPorMes[c.mes_referencia].id_coleta) {
+        ultimaPorMes[c.mes_referencia] = c;
+      }
+    }
+    const meses = Object.keys(ultimaPorMes).sort();
+    if (meses.length < 2) return [];
+    const mesAtual = meses[meses.length - 1];
+    const mesAnterior = meses[meses.length - 2];
+
+    const porChave = {};
+    for (const p of precos) {
+      if (p.variante_tipo !== null) continue;
+      const chave = `${p.concorrente}::${p.produto_id}::${p.categoria}`;
+      if (p.mes_referencia === mesAnterior) {
+        porChave[chave] = { ...(porChave[chave] || {}), anterior: p.valor, concorrente: p.concorrente, produto: p.produto_nome, categoria: p.categoria };
+      }
+      if (p.mes_referencia === mesAtual) {
+        porChave[chave] = { ...(porChave[chave] || {}), atual: p.valor, concorrente: p.concorrente, produto: p.produto_nome, categoria: p.categoria };
+      }
+    }
+    return Object.values(porChave)
+      .filter(v => v.anterior !== undefined && v.atual !== undefined && v.anterior !== v.atual)
+      .map(v => ({ ...v, label: `${v.produto} (${v.categoria})`, variacao: v.atual - v.anterior }))
+      .sort((a, b) => Math.abs(b.variacao) - Math.abs(a.variacao))
+      .slice(0, 15);
+  }, [precos, coletas]);
+
+  if (variacoes.length === 0) {
+    return (
+      <p className="text-sm text-[#6b6a64] italic py-8 text-center">
+        Nenhuma variação mês a mês disponível ainda — é preciso ao menos 2 meses
+        de coleta com valores diferentes para esta análise aparecer.
+      </p>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(280, variacoes.length * 32)}>
+      <BarChart data={variacoes} layout="vertical" margin={{ top: 8, right: 40, left: 8, bottom: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={CORES.linha} horizontal={false} />
+        <XAxis type="number" tick={{ fontSize: 11, fill: CORES.textoSuave }} tickFormatter={v => `R$${v}`} />
+        <YAxis type="category" dataKey="label" width={220} tick={{ fontSize: 11, fill: CORES.texto }} />
+        <Tooltip formatter={(v) => formatarMoeda(v)} contentStyle={{ fontSize: 13, borderRadius: 8 }} />
+        <Bar dataKey="variacao" radius={[0, 4, 4, 0]}>
+          {variacoes.map((v, i) => (
+            <Cell key={i} fill={v.variacao > 0 ? CORES.laranja : CORES.verde} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function TelaVisaoGeral({ dados, ultimoMes }) {
+  const atrativos = useMemo(() => [...new Set(dados.precos.map(p => p.concorrente))].sort(), [dados.precos]);
+  return (
+    <div className="space-y-6">
+      <Cartao titulo="Campanhas promocionais detectadas" nota={ultimoMes}>
+        <TiraCampanhas precos={dados.precos} mesReferencia={ultimoMes} atrativos={atrativos} />
+        <p className="text-xs text-[#6b6a64] mt-3">
+          Detecção automática por palavra-chave no nome do produto/categoria (ex: "promoção",
+          "campanha", nomes de datas comemorativas). Não há confirmação manual — trate como indício, não certeza absoluta.
+        </p>
+      </Cartao>
+
+      <Cartao titulo={`Tarifário completo — ${ultimoMes}`} nota="preço base, sem variantes de embarque/temporada">
+        <TabelaCompleta precos={dados.precos} mesReferencia={ultimoMes} />
+      </Cartao>
+
+      <Cartao titulo="Maiores variações mês a mês" nota="top 15, por valor absoluto">
+        <GraficoVariacaoMoM precos={dados.precos} coletas={dados.coletas} />
+      </Cartao>
+
+      <SecaoVariantes precos={dados.precos} mesReferencia={ultimoMes} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tela 2: Evolução de preço
+// ---------------------------------------------------------------------------
+function TelaEvolucao({ dados }) {
+  const precosBase = useMemo(() => dados.precos.filter(p => p.variante_tipo === null), [dados.precos]);
+
+  const atrativos = useMemo(() => [...new Set(precosBase.map(p => p.concorrente))].sort(), [precosBase]);
+  const [atrativo, setAtrativo] = useState(atrativos[0] || "");
+
+  const produtos = useMemo(
+    () => [...new Set(precosBase.filter(p => p.concorrente === atrativo).map(p => p.produto_nome))].sort(),
+    [precosBase, atrativo]
+  );
+  const [produto, setProduto] = useState("");
+
+  const categorias = useMemo(
+    () => [...new Set(precosBase.filter(p => p.concorrente === atrativo && p.produto_nome === produto).map(p => p.categoria))].sort(),
+    [precosBase, atrativo, produto]
+  );
+  const [categoria, setCategoria] = useState("");
+
+  useEffect(() => {
+    if (!produtos.includes(produto)) setProduto(produtos[0] || "");
+  }, [produtos]);
+
+  useEffect(() => {
+    if (!categorias.includes(categoria)) setCategoria(categorias[0] || "");
+  }, [categorias]);
+
+  const serie = useMemo(() => {
+    return precosBase
+      .filter(p => p.concorrente === atrativo && p.produto_nome === produto && p.categoria === categoria)
+      .sort((a, b) => a.mes_referencia.localeCompare(b.mes_referencia))
+      .map(p => ({ mes: p.mes_referencia, valor: p.valor }));
+  }, [precosBase, atrativo, produto, categoria]);
+
+  return (
+    <div className="space-y-6">
+      <Cartao titulo="Selecionar ingresso">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs text-[#6b6a64] mb-1">Atrativo</label>
+            <select
+              value={atrativo}
+              onChange={e => setAtrativo(e.target.value)}
+              className="w-full text-sm border border-[#e8e6e0] rounded-md px-3 py-2 bg-white"
+            >
+              {atrativos.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-[#6b6a64] mb-1">Ingresso / produto</label>
+            <select
+              value={produto}
+              onChange={e => setProduto(e.target.value)}
+              className="w-full text-sm border border-[#e8e6e0] rounded-md px-3 py-2 bg-white"
+            >
+              {produtos.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-[#6b6a64] mb-1">Categoria</label>
+            <select
+              value={categoria}
+              onChange={e => setCategoria(e.target.value)}
+              className="w-full text-sm border border-[#e8e6e0] rounded-md px-3 py-2 bg-white"
+            >
+              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+      </Cartao>
+
+      <Cartao
+        titulo={`Evolução de preço — ${atrativo || "—"}`}
+        nota={produto && categoria ? `${produto} · ${categoria}` : undefined}
+      >
+        {serie.length === 0 ? (
+          <p className="text-sm text-[#6b6a64] italic py-8 text-center">
+            Selecione um atrativo, ingresso e categoria para ver a série histórica.
+          </p>
+        ) : serie.length === 1 ? (
+          <div>
+            <p className="text-sm text-[#6b6a64] italic py-4 text-center">
+              Ainda há apenas 1 mês de dados coletados ({serie[0].mes}) — o gráfico de
+              linha aparece assim que houver 2+ meses para comparar.
+            </p>
+            <div className="flex justify-center">
+              <div className="rounded-lg border-2 px-6 py-4 text-center" style={{ borderColor: LARANJA }}>
+                <p className="text-xs text-[#6b6a64] uppercase tracking-wide">{serie[0].mes}</p>
+                <p className="font-display text-2xl font-semibold" style={{ color: CORES.laranjaEscuro }}>
+                  {formatarMoeda(serie[0].valor)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={CORES.linha} />
+              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: CORES.textoSuave }} />
+              <YAxis tick={{ fontSize: 12, fill: CORES.textoSuave }} tickFormatter={v => `R$${v}`} />
+              <Tooltip formatter={(v) => formatarMoeda(v)} contentStyle={{ fontSize: 13, borderRadius: 8 }} />
+              <Line type="monotone" dataKey="valor" stroke={LARANJA} strokeWidth={2.5} dot={{ r: 4, fill: LARANJA }} connectNulls />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </Cartao>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// App
+// ---------------------------------------------------------------------------
+function App() {
+  const [dados, setDados] = useState(null);
+  const [erro, setErro] = useState(null);
+  const [tela, setTela] = useState("geral");
+
+  useEffect(() => {
+    fetch('./dados_tarifario.json')
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(setDados)
+      .catch(e => setErro(e.message));
+  }, []);
+
+  if (erro) {
+    return (
+      <div className="max-w-2xl mx-auto mt-24 px-6 text-center">
+        <p className="font-medium mb-2" style={{ color: CORES.laranjaEscuro }}>Não foi possível carregar os dados.</p>
+        <p className="text-sm text-[#6b6a64]">{erro}</p>
+        <p className="text-xs text-[#6b6a64] mt-4">
+          Verifique se o arquivo <code className="font-mono-data">dados_tarifario.json</code> existe
+          nesta mesma pasta (ele é gerado por <code className="font-mono-data">exportar_para_dashboard.py</code>).
+        </p>
+      </div>
+    );
+  }
+
+  if (!dados) {
+    return <div className="max-w-2xl mx-auto mt-24 px-6 text-center text-[#6b6a64]">Carregando…</div>;
+  }
+
+  const ultimoMes = dados.coletas[dados.coletas.length - 1]?.mes_referencia;
+
+  return (
+    <div>
+      <Cabecalho dados={dados} tela={tela} setTela={setTela} />
+      <main className="max-w-6xl mx-auto px-6 md:px-12 py-8">
+        {tela === "geral" ? (
+          <TelaVisaoGeral dados={dados} ultimoMes={ultimoMes} />
+        ) : (
+          <TelaEvolucao dados={dados} />
+        )}
+        <footer className="text-xs text-[#6b6a64] text-center pt-6 pb-4 mt-6 border-t border-[#e8e6e0]">
+          Dados gerados em {new Date(dados.gerado_em).toLocaleString('pt-BR')} ·
+          YupStar Rio não incluído (coleta manual, ver CONHECIMENTO.md)
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
