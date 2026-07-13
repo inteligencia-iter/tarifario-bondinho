@@ -6,7 +6,7 @@
 <title>Monitor de Tarifário — Rio de Janeiro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
@@ -14,8 +14,8 @@
 <script src="https://unpkg.com/recharts@2/umd/Recharts.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-  .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+  body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; }
+  .font-display { font-family: 'Poppins', sans-serif; }
   .font-mono-data { font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace; }
 </style>
 </head>
@@ -30,10 +30,10 @@ const {
 } = Recharts;
 
 // ---------------------------------------------------------------------------
-// Identidade visual: laranja #ff6600 como cor de marca/destaque. Fonte de
-// destaque: Space Grotesk (substituto gratuito via Google Fonts para Ofelia
-// Display, que é uma fonte paga da Adobe Fonts/Blackletra sem CDN gratuito
-// disponível -- decisão registrada em sessão com o usuário em 2026-07-11).
+// Identidade visual: laranja #ff6600 como cor de marca. Fonte: Poppins
+// (Google Fonts) em todo o site. Onde o fundo é o laranja sólido (header),
+// o texto vai em branco para contraste -- combinado com o usuário em
+// 2026-07-13.
 // ---------------------------------------------------------------------------
 const LARANJA = "#ff6600";
 const CORES = {
@@ -68,24 +68,36 @@ function formatarMoeda(v) {
 // ---------------------------------------------------------------------------
 // Detecção de campanha promocional
 // ---------------------------------------------------------------------------
-// Não existe (ainda) um campo dedicado de "campanha" no banco -- a coleta
-// registra só concorrente/produto/categoria/valor. Combinado com o usuário:
-// tratar como "promocional" qualquer produto ou categoria cujo nome sinalize
-// uma campanha (nome de data comemorativa, evento, ou a palavra
-// promo/campanha em si), em vez de um tipo de ingresso padrão (Adulto,
-// Meia Entrada, Idoso, PCD, Estudante, ID Jovem, Infantil, Cortesia, etc.).
-// É uma heurística sobre texto livre: pode ter falso positivo/negativo
-// ocasional, revisar periodicamente com dado real.
-const REGEX_PROMO = /promo|campanha|copa\b|black\s?(friday|november)|rock in rio|carnaval|f[ée]rias|independ[êe]ncia|dia (das|dos|do) /i;
+// Não existe (ainda) um campo dedicado de "campanha" no banco. Combinado com
+// o usuário em 2026-07-13: o sinal PRIORITÁRIO/mais confiável é a
+// SAZONALIDADE, que já é dado estruturado no schema (variante_tipo ===
+// "temporada", usado hoje pelo BioParque do Rio para Alta/Baixa temporada) --
+// não é uma heurística de texto, é o próprio modelo de dados dizendo que
+// aquele produto varia de preço por época do ano. Isso é tratado como
+// sinal primário e sempre correto (não é um "achismo" por palavra-chave).
+//
+// Como sinal SECUNDÁRIO, mantemos a detecção por palavra-chave em
+// categoria/nome do produto, mas focada em feriados e eventos sazonais reais
+// (férias escolares, Dia das Mães, Dia dos Pais, Carnaval, Independência,
+// Black Friday/November, Copa, Rock in Rio, Natal), com "promo"/"campanha"
+// genérico como último recurso (cobre casos como "Campanha WhatsApp" que não
+// têm um feriado associado, mas ainda são uma ação promocional real).
+const REGEX_EVENTO = /f[ée]rias|dia (das|dos|do) |carnaval|independ[êe]ncia|copa\b|black\s?(friday|november)|rock in rio|natal|anivers[áa]rio|promo|campanha/i;
+
+function ehSazonal(p) {
+  return p.variante_tipo === "temporada";
+}
+
+function ehEvento(p) {
+  return REGEX_EVENTO.test(p.produto_nome) || REGEX_EVENTO.test(p.categoria);
+}
 
 function ehPromocional(p) {
-  return REGEX_PROMO.test(p.produto_nome) || REGEX_PROMO.test(p.categoria);
+  return ehSazonal(p) || ehEvento(p);
 }
 
 function nomePromo(p) {
-  // extrai um rótulo curto pra exibir (prioriza a categoria, que costuma
-  // ser mais específica que o nome do produto/combo)
-  return REGEX_PROMO.test(p.categoria) ? p.categoria : p.produto_nome;
+  return REGEX_EVENTO.test(p.categoria) ? p.categoria : p.produto_nome;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,15 +106,15 @@ function nomePromo(p) {
 function Cabecalho({ dados, tela, setTela }) {
   const ultimaColeta = dados?.coletas?.[dados.coletas.length - 1];
   return (
-    <header className="border-b border-[#e8e6e0] bg-white">
+    <header style={{ backgroundColor: LARANJA }}>
       <div className="max-w-6xl mx-auto px-6 md:px-12 pt-8 pb-4">
-        <p className="text-xs tracking-[0.15em] uppercase text-[#6b6a64] mb-2">
+        <p className="text-xs tracking-[0.15em] uppercase text-white/80 mb-2">
           Grupo Iter · Inteligência de Mercado
         </p>
-        <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight">
-          Monitor de Tarifário <span style={{ color: LARANJA }}>—</span> Rio de Janeiro
+        <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-white">
+          Monitor de Tarifário — Rio de Janeiro
         </h1>
-        <p className="text-sm text-[#6b6a64] mt-3 max-w-2xl">
+        <p className="text-sm text-white/90 mt-3 max-w-2xl">
           Acompanhamento mensal de preços de ingressos entre o Parque Bondinho Pão de
           Açúcar e os principais concorrentes na cidade.
           {ultimaColeta && (
@@ -120,8 +132,8 @@ function Cabecalho({ dados, tela, setTela }) {
             onClick={() => setTela(aba.id)}
             className={`font-display text-sm font-medium px-4 py-3 border-b-2 transition-colors ${
               tela === aba.id
-                ? "border-[#ff6600] text-[#1c1b19]"
-                : "border-transparent text-[#6b6a64] hover:text-[#1c1b19]"
+                ? "border-white text-white"
+                : "border-transparent text-white/70 hover:text-white"
             }`}
           >
             {aba.label}
@@ -152,11 +164,10 @@ function Cartao({ titulo, children, nota, className }) {
 function TiraCampanhas({ precos, mesReferencia, atrativos }) {
   const porAtrativo = useMemo(() => {
     return atrativos.map(nome => {
-      const promos = precos.filter(
-        p => p.concorrente === nome && p.mes_referencia === mesReferencia && ehPromocional(p)
-      );
-      const nomesUnicos = [...new Set(promos.map(nomePromo))];
-      return { nome, emCampanha: nomesUnicos.length > 0, promos: nomesUnicos };
+      const doAtrativo = precos.filter(p => p.concorrente === nome && p.mes_referencia === mesReferencia);
+      const temSazonalidade = doAtrativo.some(ehSazonal);
+      const eventos = [...new Set(doAtrativo.filter(p => p.variante_tipo === null && ehEvento(p)).map(nomePromo))];
+      return { nome, temSazonalidade, eventos, emCampanha: temSazonalidade || eventos.length > 0 };
     });
   }, [precos, mesReferencia, atrativos]);
 
@@ -173,8 +184,13 @@ function TiraCampanhas({ precos, mesReferencia, atrativos }) {
           </div>
           {a.emCampanha ? (
             <p className="text-xs" style={{ color: CORES.laranjaEscuro }}>
-              🏷️ Em campanha: {a.promos.slice(0, 2).join(", ")}
-              {a.promos.length > 2 && ` +${a.promos.length - 2}`}
+              🏷️{" "}
+              {[
+                a.temSazonalidade ? "Sazonalidade (Alta/Baixa temporada)" : null,
+                ...a.eventos.slice(0, a.temSazonalidade ? 1 : 2),
+              ].filter(Boolean).join(", ")}
+              {(a.temSazonalidade ? a.eventos.length > 1 : a.eventos.length > 2) &&
+                ` +${a.eventos.length - (a.temSazonalidade ? 1 : 2)}`}
             </p>
           ) : (
             <p className="text-xs text-[#6b6a64]">Sem campanha detectada</p>
@@ -185,53 +201,128 @@ function TiraCampanhas({ precos, mesReferencia, atrativos }) {
   );
 }
 
+function IconeOrdenacao({ ativo, direcao }) {
+  if (!ativo) return <span className="text-[#c9c7c0] ml-1">↕</span>;
+  return <span className="ml-1" style={{ color: CORES.laranjaEscuro }}>{direcao === "asc" ? "↑" : "↓"}</span>;
+}
+
 function TabelaCompleta({ precos, mesReferencia }) {
   const [incluirPromo, setIncluirPromo] = useState(false);
-  const [filtroAtrativo, setFiltroAtrativo] = useState("todos");
+  const [atrativo, setAtrativo] = useState("todos");
+  const [produto, setProduto] = useState("todos");
+  const [categoria, setCategoria] = useState("todos");
+  const [ordenacao, setOrdenacao] = useState({ campo: null, direcao: "asc" });
 
-  const atrativos = useMemo(
-    () => [...new Set(precos.map(p => p.concorrente))].sort(),
-    [precos]
-  );
+  const doMes = useMemo(() => precos.filter(p => p.mes_referencia === mesReferencia), [precos, mesReferencia]);
+
+  const atrativos = useMemo(() => [...new Set(doMes.map(p => p.concorrente))].sort(), [doMes]);
+
+  const produtos = useMemo(() => {
+    if (atrativo === "todos") return [];
+    return [...new Set(doMes.filter(p => p.concorrente === atrativo).map(p => p.produto_nome))].sort();
+  }, [doMes, atrativo]);
+
+  const categorias = useMemo(() => {
+    if (atrativo === "todos" || produto === "todos") return [];
+    return [...new Set(doMes.filter(p => p.concorrente === atrativo && p.produto_nome === produto).map(p => p.categoria))].sort();
+  }, [doMes, atrativo, produto]);
+
+  useEffect(() => { setProduto("todos"); setCategoria("todos"); }, [atrativo]);
+  useEffect(() => { setCategoria("todos"); }, [produto]);
+
+  const mostrarVariantes = atrativo !== "todos" && produto !== "todos";
 
   const linhas = useMemo(() => {
-    return precos
-      .filter(p => p.mes_referencia === mesReferencia && p.variante_tipo === null)
-      .filter(p => incluirPromo || !ehPromocional(p))
-      .filter(p => filtroAtrativo === "todos" || p.concorrente === filtroAtrativo)
-      .sort((a, b) => a.concorrente.localeCompare(b.concorrente) || a.produto_nome.localeCompare(b.produto_nome) || a.categoria.localeCompare(b.categoria));
-  }, [precos, mesReferencia, incluirPromo, filtroAtrativo]);
+    let base = doMes;
+    if (atrativo !== "todos") base = base.filter(p => p.concorrente === atrativo);
+    if (produto !== "todos") {
+      base = base.filter(p => p.produto_nome === produto);
+      if (categoria !== "todos") base = base.filter(p => p.categoria === categoria);
+    } else {
+      base = base.filter(p => p.variante_tipo === null);
+      base = base.filter(p => incluirPromo || !ehPromocional(p));
+    }
+
+    const comparador = (a, b) => {
+      if (ordenacao.campo === "preco") {
+        return ordenacao.direcao === "asc" ? a.valor - b.valor : b.valor - a.valor;
+      }
+      if (ordenacao.campo === "atrativo") {
+        const cmp = a.concorrente.localeCompare(b.concorrente);
+        return ordenacao.direcao === "asc" ? cmp : -cmp;
+      }
+      return a.concorrente.localeCompare(b.concorrente) || a.produto_nome.localeCompare(b.produto_nome) || a.categoria.localeCompare(b.categoria);
+    };
+    return [...base].sort(comparador);
+  }, [doMes, atrativo, produto, categoria, incluirPromo, ordenacao]);
+
+  const alternarOrdenacao = (campo) => {
+    setOrdenacao(prev => prev.campo === campo
+      ? { campo, direcao: prev.direcao === "asc" ? "desc" : "asc" }
+      : { campo, direcao: "asc" });
+  };
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select
-          value={filtroAtrativo}
-          onChange={e => setFiltroAtrativo(e.target.value)}
+          value={atrativo}
+          onChange={e => setAtrativo(e.target.value)}
           className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white"
         >
           <option value="todos">Todos os atrativos</option>
           {atrativos.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-[#6b6a64] cursor-pointer select-none">
-          <input type="checkbox" checked={incluirPromo} onChange={e => setIncluirPromo(e.target.checked)} />
-          Incluir categorias promocionais/de campanha
-        </label>
+        <select
+          value={produto}
+          onChange={e => setProduto(e.target.value)}
+          disabled={atrativo === "todos"}
+          className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white disabled:bg-[#f2f1ec] disabled:text-[#a8a69f]"
+        >
+          <option value="todos">Todos os ingressos</option>
+          {produtos.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select
+          value={categoria}
+          onChange={e => setCategoria(e.target.value)}
+          disabled={produto === "todos"}
+          className="text-xs border border-[#e8e6e0] rounded-md px-2 py-1.5 bg-white disabled:bg-[#f2f1ec] disabled:text-[#a8a69f]"
+        >
+          <option value="todos">Todas as categorias</option>
+          {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        {produto === "todos" && (
+          <label className="flex items-center gap-1.5 text-xs text-[#6b6a64] cursor-pointer select-none">
+            <input type="checkbox" checked={incluirPromo} onChange={e => setIncluirPromo(e.target.checked)} />
+            Incluir categorias promocionais/de campanha
+          </label>
+        )}
         <span className="text-xs text-[#6b6a64] ml-auto">{linhas.length} ingresso(s)</span>
       </div>
+      {mostrarVariantes && (
+        <p className="text-xs text-[#6b6a64] mb-3 italic">
+          Mostrando todas as variantes deste ingresso (embarque/temporada), quando existirem.
+        </p>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#e8e6e0] text-left text-xs uppercase tracking-wide text-[#6b6a64]">
-              <th className="py-2 pr-4">Atrativo</th>
+              <th className="py-2 pr-4 cursor-pointer select-none" onClick={() => alternarOrdenacao("atrativo")}>
+                Atrativo <IconeOrdenacao ativo={ordenacao.campo === "atrativo"} direcao={ordenacao.direcao} />
+              </th>
               <th className="py-2 pr-4">Ingresso</th>
               <th className="py-2 pr-4">Categoria</th>
-              <th className="py-2 text-right">Preço</th>
+              {mostrarVariantes && <th className="py-2 pr-4">Variante</th>}
+              <th className="py-2 text-right cursor-pointer select-none" onClick={() => alternarOrdenacao("preco")}>
+                Preço <IconeOrdenacao ativo={ordenacao.campo === "preco"} direcao={ordenacao.direcao} />
+              </th>
             </tr>
           </thead>
           <tbody>
             {linhas.map((l, i) => {
-              const promo = ehPromocional(l);
+              const sazonal = ehSazonal(l);
+              const evento = l.variante_tipo === null && ehEvento(l);
               return (
                 <tr key={i} className="border-b border-[#f2f1ec]">
                   <td className="py-2 pr-4">
@@ -244,18 +335,28 @@ function TabelaCompleta({ precos, mesReferencia }) {
                   <td className="py-2 pr-4 text-[#6b6a64]">{l.produto_nome}</td>
                   <td className="py-2 pr-4 text-[#6b6a64]">
                     {l.categoria}
-                    {promo && (
+                    {evento && (
                       <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: CORES.laranjaClaro, color: CORES.laranjaEscuro }}>
                         promo
                       </span>
                     )}
+                    {sazonal && (
+                      <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#ece8f5]" style={{ color: CORES.roxo }}>
+                        sazonal
+                      </span>
+                    )}
                   </td>
+                  {mostrarVariantes && (
+                    <td className="py-2 pr-4 text-[#6b6a64]">
+                      {l.variante_nome ? `${l.variante_nome}${l.variante_tipo ? ` (${l.variante_tipo})` : ""}` : "— (padrão)"}
+                    </td>
+                  )}
                   <td className="py-2 text-right font-mono-data">{formatarMoeda(l.valor)}</td>
                 </tr>
               );
             })}
             {linhas.length === 0 && (
-              <tr><td colSpan="4" className="py-8 text-center text-[#6b6a64] text-sm italic">Nenhum ingresso encontrado com este filtro.</td></tr>
+              <tr><td colSpan={mostrarVariantes ? 5 : 4} className="py-8 text-center text-[#6b6a64] text-sm italic">Nenhum ingresso encontrado com este filtro.</td></tr>
             )}
           </tbody>
         </table>
@@ -285,7 +386,7 @@ function SecaoVariantes({ precos, mesReferencia }) {
   if (porProduto.length === 0) return null;
 
   return (
-    <Cartao titulo="Preços com variantes (embarque / temporada / antecedência)" nota={mesReferencia}>
+    <Cartao titulo="Preços com variantes (embarque / temporada / antecedência)" nota={`${mesReferencia} · também acessível via os filtros da tabela acima`}>
       <div className="space-y-6">
         {porProduto.map((grupo, i) => (
           <div key={i}>
@@ -381,12 +482,14 @@ function TelaVisaoGeral({ dados, ultimoMes }) {
       <Cartao titulo="Campanhas promocionais detectadas" nota={ultimoMes}>
         <TiraCampanhas precos={dados.precos} mesReferencia={ultimoMes} atrativos={atrativos} />
         <p className="text-xs text-[#6b6a64] mt-3">
-          Detecção automática por palavra-chave no nome do produto/categoria (ex: "promoção",
-          "campanha", nomes de datas comemorativas). Não há confirmação manual — trate como indício, não certeza absoluta.
+          Prioridade de detecção: 1) sazonalidade (dado estruturado — o produto tem preço por
+          temporada Alta/Baixa); 2) feriados e eventos sazonais (férias, Dia das Mães, Dia dos Pais,
+          Carnaval, Black Friday, Copa etc.) por palavra-chave no nome do produto/categoria. Não há
+          confirmação manual — trate como indício, não certeza absoluta.
         </p>
       </Cartao>
 
-      <Cartao titulo={`Tarifário completo — ${ultimoMes}`} nota="preço base, sem variantes de embarque/temporada">
+      <Cartao titulo={`Tarifário completo — ${ultimoMes}`} nota="use os filtros para navegar por atrativo → ingresso → categoria">
         <TabelaCompleta precos={dados.precos} mesReferencia={ultimoMes} />
       </Cartao>
 
